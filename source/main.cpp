@@ -1,4 +1,4 @@
-//================================================== ƒCƒ“ƒNƒ‹[ƒh ==================================================
+ï»¿//================================================== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ ==================================================
 #include "../DxLib.h"
 
 #define _USE_MATH_DEFINES
@@ -11,15 +11,15 @@
 
 #pragma comment ( lib, "winmm.lib" )
 
-//================================================== –¼‘O‹óŠÔ ==================================================
+//================================================== åå‰ç©ºé–“ ==================================================
 using namespace std;
 
-//================================================== ƒ†[ƒeƒBƒŠƒeƒB ==================================================
+//================================================== ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ ==================================================
 
 //-------------------- 3D --------------------
 
 /**
- * 3DƒxƒNƒgƒ‹
+ * 3Dãƒ™ã‚¯ãƒˆãƒ«
  */
 struct Vector3f : public VECTOR{
 	Vector3f();
@@ -43,7 +43,7 @@ const Vector3f operator -( const VECTOR& lhs, const VECTOR& rhs );
 float getDistance( const VECTOR& lhs, const VECTOR& rhs );
 
 /**
- * ¶¬
+ * ç”Ÿæˆ
  */
 Vector3f::Vector3f(){
 	x = 0.0f;
@@ -51,7 +51,7 @@ Vector3f::Vector3f(){
 	z = 0.0f;
 }
 /**
- * ¶¬(ƒRƒs[)
+ * ç”Ÿæˆ(ã‚³ãƒ”ãƒ¼)
  */
 Vector3f::Vector3f( const VECTOR& rhs ){
 	x = rhs.x;
@@ -59,7 +59,7 @@ Vector3f::Vector3f( const VECTOR& rhs ){
 	z = rhs.z;
 }
 /**
- * ¶¬
+ * ç”Ÿæˆ
  */
 Vector3f::Vector3f( float _x, float _y, float _z ){
 	x = _x;
@@ -67,12 +67,12 @@ Vector3f::Vector3f( float _x, float _y, float _z ){
 	z = _z;
 }
 /**
- * ”jŠü
+ * ç ´æ£„
  */
 Vector3f::~Vector3f(){
 }
 /**
- * ’l•ÏX
+ * å€¤å¤‰æ›´
  */
 Vector3f& Vector3f::set( float _x, float _y, float _z ){
 	x = _x;
@@ -81,7 +81,7 @@ Vector3f& Vector3f::set( float _x, float _y, float _z ){
 	return *this;
 }
 /**
- * ƒRƒs[
+ * ã‚³ãƒ”ãƒ¼
  */
 Vector3f& Vector3f::operator =( const VECTOR& rhs ){
 	x = rhs.x;
@@ -90,7 +90,7 @@ Vector3f& Vector3f::operator =( const VECTOR& rhs ){
 	return *this;
 }
 /**
- * ‰ÁZ
+ * åŠ ç®—
  */
 Vector3f& Vector3f::operator +=( const VECTOR& rhs ){
 	x += rhs.x;
@@ -99,7 +99,7 @@ Vector3f& Vector3f::operator +=( const VECTOR& rhs ){
 	return *this;
 }
 /**
- * ’·‚³•ÏX
+ * é•·ã•å¤‰æ›´
  */
 Vector3f& Vector3f::setLength( float len ){
 	float oriLen = getLength();
@@ -113,26 +113,26 @@ Vector3f& Vector3f::setLength( float len ){
 	return *this;
 }
 /**
- * ’·‚³æ“¾
+ * é•·ã•å–å¾—
  */
 float Vector3f::getLength() const{
 	return ( float )sqrt( getLength2() );
 }
 /**
- * ’·‚³‚Ì‚Qææ“¾
+ * é•·ã•ã®ï¼’ä¹—å–å¾—
  */
 float Vector3f::getLength2() const{
 	return x * x + y * y + z * z;
 }
 
 /**
- * ‰ÁZ
+ * åŠ ç®—
  */
 const Vector3f operator +( const VECTOR& lhs, const VECTOR& rhs ){
 	return Vector3f( lhs.x + rhs.x,  lhs.y + rhs.y, lhs.z + rhs.z );
 }
 /**
- * Œ¸Z
+ * æ¸›ç®—
  */
 const Vector3f operator -( const VECTOR& lhs, const VECTOR& rhs ){
 	return Vector3f( lhs.x - rhs.x,  lhs.y - rhs.y, lhs.z - rhs.z );
@@ -147,17 +147,17 @@ float getDistance( const VECTOR& lhs, const VECTOR& rhs ){
 	return ( float )sqrt( x * x + y * y + z * z );
 }
 
-static const float F_PI = ( float )M_PI; /** float Œ^‚ÌƒÎ */
+static const float F_PI = ( float )M_PI; /** float å‹ã®Ï€ */
 
-//-------------------- ƒL[ --------------------
+//-------------------- ã‚­ãƒ¼ --------------------
 
 /**
- * ƒL[ƒpƒbƒh
+ * ã‚­ãƒ¼ãƒ‘ãƒƒãƒ‰
  */
 class Keypad{
-	int pressSt_; /** ‰Ÿ‚³‚ê‚Ä‚¢‚éƒL[ */
-	int pushSt_; /** ‰Ÿ‚³‚ê‚½ƒL[ */
-	int releaseSt_; /** —£‚³‚ê‚½ƒL[ */
+	int pressSt_; /** æŠ¼ã•ã‚Œã¦ã„ã‚‹ã‚­ãƒ¼ */
+	int pushSt_; /** æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ */
+	int releaseSt_; /** é›¢ã•ã‚ŒãŸã‚­ãƒ¼ */
 	
 public:
 	Keypad();
@@ -177,19 +177,19 @@ public:
 };
 
 /**
- * ƒL[ƒpƒbƒh¶¬
+ * ã‚­ãƒ¼ãƒ‘ãƒƒãƒ‰ç”Ÿæˆ
  */
 Keypad::Keypad():
 pressSt_( 0 ), pushSt_( 0 ), releaseSt_( 0 ){
 }
 /**
- * ƒL[ƒpƒbƒh”jŠü
+ * ã‚­ãƒ¼ãƒ‘ãƒƒãƒ‰ç ´æ£„
  */
 Keypad::~Keypad(){
 }
 
 /**
- * ƒL[ƒpƒbƒhó‘ÔXV
+ * ã‚­ãƒ¼ãƒ‘ãƒƒãƒ‰çŠ¶æ…‹æ›´æ–°
  */
 Keypad& Keypad::update(){
 	int prev = pressSt_;
@@ -201,30 +201,30 @@ Keypad& Keypad::update(){
 }
 
 /**
- * ‰Ÿ‚³‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
+ * æŠ¼ã•ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹
  */
 bool Keypad::isPressed( int keyCode ) const{
 	return ( pressSt_ & keyCode ) != 0;
 }
 /**
- * ‰Ÿ‚³‚ê‚½‚©‚Ç‚¤‚©
+ * æŠ¼ã•ã‚ŒãŸã‹ã©ã†ã‹
  */
 bool Keypad::isPushed( int keyCode ) const{
 	return ( pushSt_ & keyCode ) != 0;
 }
 /**
- * —£‚³‚ê‚½‚©‚Ç‚¤‚©
+ * é›¢ã•ã‚ŒãŸã‹ã©ã†ã‹
  */
 bool Keypad::isReleased( int keyCode ) const{
 	return ( releaseSt_ & keyCode ) != 0;
 }
 
-//-------------------- ƒV[ƒ“ --------------------
+//-------------------- ã‚·ãƒ¼ãƒ³ --------------------
 
 struct Global;
 
 /**
- * ŠeƒV[ƒ“ƒNƒ‰ƒX‚ÌƒCƒ“ƒ^[ƒtƒFƒCƒX
+ * å„ã‚·ãƒ¼ãƒ³ã‚¯ãƒ©ã‚¹ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¤ã‚¹
  */
 class Scene{
 public:
@@ -236,30 +236,30 @@ public:
 };
 
 
-//================================================== ƒOƒ[ƒoƒ‹ƒIƒuƒWƒFƒNƒg ==================================================
+//================================================== ã‚°ãƒ­ãƒ¼ãƒãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ ==================================================
 
 /**
- * ƒV[ƒ“ƒR[ƒh
+ * ã‚·ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰
  */
 enum SceneCode{
-	SceneCodeEmpty4Develop = 0, /** yŠJ”­—pz‹óƒV[ƒ“ */
-	SceneCodePlayerControll4Develop, /** yŠJ”­—pzƒvƒŒƒCƒ„[‘€ìƒV[ƒ“ */
+	SceneCodeEmpty4Develop = 0, /** ã€é–‹ç™ºç”¨ã€‘ç©ºã‚·ãƒ¼ãƒ³ */
+	SceneCodePlayerControll4Develop, /** ã€é–‹ç™ºç”¨ã€‘ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ“ä½œã‚·ãƒ¼ãƒ³ */
 };
 
 /**
- * ‘S‘Ì‚Åg‚¤ƒIƒuƒWƒFƒNƒgŒS
+ * å…¨ä½“ã§ä½¿ã†ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆéƒ¡
  */
 struct Global{
-	Keypad keypad1; /** ƒL[ƒpƒbƒh */
-	Scene* scene; /** ƒV[ƒ“ */
-	SceneCode sceneCode; /** ƒV[ƒ“ƒR[ƒh */
+	Keypad keypad1; /** ã‚­ãƒ¼ãƒ‘ãƒƒãƒ‰ */
+	Scene* scene; /** ã‚·ãƒ¼ãƒ³ */
+	SceneCode sceneCode; /** ã‚·ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰ */
 	
 	Global();
 	~Global();
 };
 
 /**
- * ¶¬
+ * ç”Ÿæˆ
  */
 Global::Global():
 keypad1(),
@@ -267,16 +267,16 @@ scene( NULL ), sceneCode( SceneCodePlayerControll4Develop ){
 }
 
 /**
- * ”jŠü
+ * ç ´æ£„
  */
 Global::~Global(){
 	delete scene; scene = NULL;
 }
 
-//================================================== yŠJ”­—pz‹óƒV[ƒ“ ==================================================
+//================================================== ã€é–‹ç™ºç”¨ã€‘ç©ºã‚·ãƒ¼ãƒ³ ==================================================
 
 /**
- * ‹óƒV[ƒ“
+ * ç©ºã‚·ãƒ¼ãƒ³
  */
 class EmptyScene : public virtual Scene{
 public:
@@ -287,58 +287,58 @@ public:
 	void onDraw();
 
 private:
-	Global* g_; /** ƒOƒ[ƒoƒ‹ƒIƒuƒWƒFƒNƒg */
+	Global* g_; /** ã‚°ãƒ­ãƒ¼ãƒãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ */
 };
 
 /**
- * ¶¬
+ * ç”Ÿæˆ
  */
 EmptyScene::EmptyScene( Global* g ):
 Scene(),
 g_( g ){
 }
 /**
- * ”jŠü
+ * ç ´æ£„
  */
 EmptyScene::~EmptyScene(){
 }
 
 /**
- * XV
+ * æ›´æ–°
  */
 void EmptyScene::onUpdate(){
 }
 
 /**
- * •`‰æ
+ * æç”»
  */
 void EmptyScene::onDraw(){
-	ClearDrawScreen(); // ƒNƒŠƒA
-	ScreenFlip(); // •`‰æŠ®—¹
+	ClearDrawScreen(); // ã‚¯ãƒªã‚¢
+	ScreenFlip(); // æç”»å®Œäº†
 }
 
 
 
-//================================================== yŠJ”­—pzƒvƒŒƒCƒ„[‘€ìƒV[ƒ“ ==================================================
+//================================================== ã€é–‹ç™ºç”¨ã€‘ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ“ä½œã‚·ãƒ¼ãƒ³ ==================================================
 
 
 /**
- * ƒJƒƒ‰î•ñ
+ * ã‚«ãƒ¡ãƒ©æƒ…å ±
  */
 struct Camera{
-	Vector3f position; /** ˆÊ’u */
-	Vector3f target; /** ‘ÎÛ */
+	Vector3f position; /** ä½ç½® */
+	Vector3f target; /** å¯¾è±¡ */
 };
 
 /**
- * ƒvƒŒƒCƒ„[î•ñ
+ * ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æƒ…å ±
  */
 struct Player{
-	Vector3f position; /** ˆÊ’u */
+	Vector3f position; /** ä½ç½® */
 };
 
 /**
- * ƒvƒŒƒCƒ„[‘€ìƒV[ƒ“
+ * ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ“ä½œã‚·ãƒ¼ãƒ³
  */
 class PlayerControllScene : public virtual Scene{
 public:
@@ -349,67 +349,67 @@ public:
 	void onDraw();
 
 private:
-	Global* g_; /** ƒOƒ[ƒoƒ‹ƒIƒuƒWƒFƒNƒg */
-	int modelId_; /** ƒ‚ƒfƒ‹ ID */
+	Global* g_; /** ã‚°ãƒ­ãƒ¼ãƒãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ */
+	int modelId_; /** ãƒ¢ãƒ‡ãƒ« ID */
 	
-	Player player_; /** ƒvƒŒƒCƒ„[ */
-	Camera camera_; /** ƒJƒƒ‰ */
+	Player player_; /** ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ */
+	Camera camera_; /** ã‚«ãƒ¡ãƒ© */
 };
 
 /**
- * ¶¬
+ * ç”Ÿæˆ
  */
 PlayerControllScene::PlayerControllScene( Global* g ):
 Scene(),
 g_( g ),
 modelId_( -1 ),
 player_(), camera_(){
-	// ƒ‚ƒfƒ‹“Ç‚İ‚İ
+	// ãƒ¢ãƒ‡ãƒ«èª­ã¿è¾¼ã¿
 	modelId_ = MV1LoadModel( "resource/airplane_player.x" );
 }
 /**
- * ”jŠü
+ * ç ´æ£„
  */
 PlayerControllScene::~PlayerControllScene(){
-	// ƒ‚ƒfƒ‹”jŠü
+	// ãƒ¢ãƒ‡ãƒ«ç ´æ£„
 	MV1DeleteModel( modelId_ ); modelId_ = -1;
 }
 
 /**
- * XV
+ * æ›´æ–°
  */
 void PlayerControllScene::onUpdate(){
-	// ƒvƒŒƒCƒ„
+	// ãƒ—ãƒ¬ã‚¤ãƒ¤
 	player_.position.set( 0.0f, 0.0f, 0.0f );
 	
-	// ƒJƒƒ‰İ’è
+	// ã‚«ãƒ¡ãƒ©è¨­å®š
 	camera_.target = player_.position;
 	camera_.position = camera_.target + Vector3f( 0.0f, 1.0f, -6.0f );
 }
 
 /**
- * •`‰æ
+ * æç”»
  */
 void PlayerControllScene::onDraw(){
-	ClearDrawScreen(); // ƒNƒŠƒA
+	ClearDrawScreen(); // ã‚¯ãƒªã‚¢
 	
-	// ƒJƒƒ‰
+	// ã‚«ãƒ¡ãƒ©
 	{
-		SetupCamera_Perspective( F_PI * 30.f / 180.f ); // ‰æŠp
-		SetCameraNearFar( 1.0f, 1000.0f ); // ‘O–ÊE”w–Ê‚Ì‹——£
+		SetupCamera_Perspective( F_PI * 30.f / 180.f ); // ç”»è§’
+		SetCameraNearFar( 1.0f, 1000.0f ); // å‰é¢ãƒ»èƒŒé¢ã®è·é›¢
 		
-		SetCameraPositionAndTarget_UpVecY( camera_.position, camera_.target ); // ƒJƒƒ‰p¨
+		SetCameraPositionAndTarget_UpVecY( camera_.position, camera_.target ); // ã‚«ãƒ¡ãƒ©å§¿å‹¢
 	}
 	
-	// ƒvƒŒƒCƒ„[•`‰æ
+	// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æç”»
 	{
 		MV1SetPosition( modelId_, player_.position );
 		MV1SetScale( modelId_, Vector3f( 0.0075f, 0.0075f, 0.0075f ) );
 		
-		MV1DrawModel( modelId_ ); // •`‰æ
+		MV1DrawModel( modelId_ ); // æç”»
 	}
 	
-	ScreenFlip(); // •`‰æŠ®—¹
+	ScreenFlip(); // æç”»å®Œäº†
 }
 
 
@@ -418,10 +418,10 @@ void PlayerControllScene::onDraw(){
 
 
 
-//================================================== ƒV[ƒ“ƒtƒ@ƒNƒgƒŠ ==================================================
+//================================================== ã‚·ãƒ¼ãƒ³ãƒ•ã‚¡ã‚¯ãƒˆãƒª ==================================================
 
 /**
- * ƒV[ƒ“¶¬
+ * ã‚·ãƒ¼ãƒ³ç”Ÿæˆ
  */
 static Scene* createScene( SceneCode code, Global* g ){
 	if ( code == SceneCodeEmpty4Develop ) return new EmptyScene( g );
@@ -430,30 +430,30 @@ static Scene* createScene( SceneCode code, Global* g ){
 	return NULL;
 }
 
-//================================================== ƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒg ==================================================
+//================================================== ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆ ==================================================
 
 /**
- * ƒƒCƒ“ƒ‹[ƒv
+ * ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—
  */
 static void runMainLoop(){
 	Global global;
 	
-	// ‰Šú‰»
+	// åˆæœŸåŒ–
 	global.scene = createScene( global.sceneCode, &global );
 	
-	// Œ»İ‚ÌƒV[ƒ“ƒR[ƒh
+	// ç¾åœ¨ã®ã‚·ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰
 	SceneCode sceneCode = global.sceneCode;
 	
-	// ƒQ[ƒ€ƒ‹[ƒv
+	// ã‚²ãƒ¼ãƒ ãƒ«ãƒ¼ãƒ—
 	while( ProcessMessage() == 0 && CheckHitKey( KEY_INPUT_ESCAPE ) == 0 ){
-		// I—¹”»’è
+		// çµ‚äº†åˆ¤å®š
 		if ( CheckHitKey( KEY_INPUT_ESCAPE ) != 0 ){
 			break;
 		}
 		
-		unsigned int bgnTm = timeGetTime(); // ƒtƒŒ[ƒ€‚ÌŠJn
+		unsigned int bgnTm = timeGetTime(); // ãƒ•ãƒ¬ãƒ¼ãƒ ã®é–‹å§‹æ™‚åˆ»
 		
-		// ƒL[‘€ì
+		// ã‚­ãƒ¼æ“ä½œ
 		global.keypad1.update();
 		
 		if ( sceneCode != global.sceneCode ){
@@ -463,39 +463,39 @@ static void runMainLoop(){
 			global.scene = createScene( global.sceneCode, &global );
 		}
 		
-		// ƒV[ƒ“XV
+		// ã‚·ãƒ¼ãƒ³æ›´æ–°
 		global.scene->onUpdate();
 		global.scene->onDraw();
 		
-		// ƒXƒŠ[ƒv
-		unsigned int endTm = timeGetTime(); // ƒtƒŒ[ƒ€‚ÌI—¹
+		// ã‚¹ãƒªãƒ¼ãƒ—
+		unsigned int endTm = timeGetTime(); // ãƒ•ãƒ¬ãƒ¼ãƒ ã®çµ‚äº†æ™‚åˆ»
 		int cost = endTm - bgnTm;
 		if ( cost < 1 ) cost = 1;
 		if ( cost > 16 ) cost = 16;
 		
-		Sleep( 16 - cost ); // ƒXƒŠ[ƒv‚·‚éŠÔ
+		Sleep( 16 - cost ); // ã‚¹ãƒªãƒ¼ãƒ—ã™ã‚‹æ™‚é–“
 	}
 }
 
 /**
- * ƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒg
+ * ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆ
  */
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ){
-	ChangeWindowMode( TRUE ); // ƒEƒBƒ“ƒhƒEƒ‚[ƒh
-	//SetGraphMode( 1280, 720, 16 ); // ‰ğ‘œ“x(HD)
-	SetGraphMode( 640, 360, 16 ); // ‰ğ‘œ“x(HVGAW)
+	ChangeWindowMode( TRUE ); // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ¢ãƒ¼ãƒ‰
+	//SetGraphMode( 1280, 720, 16 ); // è§£åƒåº¦(HD)
+	SetGraphMode( 640, 360, 16 ); // è§£åƒåº¦(HVGAW)
 	if( DxLib_Init() == -1 ){
-		// ‚c‚wƒ‰ƒCƒuƒ‰ƒŠ‰Šú‰»ˆ—
-		 return -1; // ƒGƒ‰[‚ª‹N‚«‚½‚ç’¼‚¿‚ÉI—¹
+		// ï¼¤ï¼¸ãƒ©ã‚¤ãƒ–ãƒ©ãƒªåˆæœŸåŒ–å‡¦ç†
+		 return -1; // ã‚¨ãƒ©ãƒ¼ãŒèµ·ããŸã‚‰ç›´ã¡ã«çµ‚äº†
 	}
 	
-	SetDrawScreen( DX_SCREEN_BACK ); // •`‰ææİ’è
-	timeBeginPeriod(1); // ŠÔ¸“x
+	SetDrawScreen( DX_SCREEN_BACK ); // æç”»å…ˆè¨­å®š
+	timeBeginPeriod(1); // æ™‚é–“ç²¾åº¦
 	
-	runMainLoop(); // ƒƒCƒ“ƒ‹[ƒv
+	runMainLoop(); // ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—
 	
-	timeEndPeriod(1); // ŠÔ¸“x
-	DxLib_End(); // ‚c‚wƒ‰ƒCƒuƒ‰ƒŠg—p‚ÌI—¹ˆ—
+	timeEndPeriod(1); // æ™‚é–“ç²¾åº¦
+	DxLib_End(); // ï¼¤ï¼¸ãƒ©ã‚¤ãƒ–ãƒ©ãƒªä½¿ç”¨ã®çµ‚äº†å‡¦ç†
 	
 	return 0;
 }
