@@ -394,57 +394,129 @@ PlayerControllScene::~PlayerControllScene(){
  * 更新
  */
 void PlayerControllScene::onUpdate(){
-	// ターゲット操作
-	{
-		int dirX = 0;
-		int dirY = 0;
-		
-		GetJoypadAnalogInput( &dirX, &dirY, DX_INPUT_PAD1 ); // ジョイパッド状態取得
-		
-		if ( !( dirX == 0 && dirY == 0 ) ){
-			// ジョイパッド操作中
-			target_.mv.x = ( float )dirX / 10.0f;
-			target_.mv.y = ( float )-dirY / 10.0f;
-		}else{
-			// ジョイパッド未操作
-			target_.mv.set( 0.0f, 0.0f, 0.0f );
-			
-			// 位置を戻す
-			target_.pos.x = player_.pos.x * 0.1f + target_.pos.x * 0.9f;
-			target_.pos.y = player_.pos.y * 0.1f + target_.pos.y * 0.9f;
-		}
+	bool holdJoypad = false;
+	bool leftAvert = false;
+	bool rightAvert = false;
+	int joypadX = 0;
+	int joypadY = 0;
 
-		// ターゲット位置更新
-		target_.pos += target_.mv;
-		
-		// ターゲット移動制限
-		if ( target_.pos.x < -1000.0f ) target_.pos.x = -1000.0f;
-		if ( target_.pos.x > 1000.0f ) target_.pos.x = 1000.0f;
-		if ( target_.pos.y < -500.0f ) target_.pos.y = -500.0f;
-		if ( target_.pos.y > 1000.0f ) target_.pos.y = 1000.0f;
-		
-		target_.pos.z = player_.pos.z + 1000.0f;
+	// ジョイパッド状態取得
+	GetJoypadAnalogInput( &joypadX, &joypadY, DX_INPUT_PAD1 );
+	if ( !( joypadX == 0 && joypadY == 0 ) ){
+		holdJoypad = true;
 	}
 	
-	// プレイヤ
+	// 操作・速度更新
 	{
-		player_.pos.set( 0.0f, 0.0f, 0.0f );
-		
+		// ターゲット操作
 		{
-			Vector3f diff;
+			if ( holdJoypad ){
+				// ジョイパッド操作中
+				holdJoypad = true;
+				
+				target_.mv.x = ( float )joypadX / 10.0f;
+				target_.mv.y = ( float )-joypadY / 10.0f;
+			}else{
+				// ジョイパッド非操作中
+				target_.mv.set( 0.0f, 0.0f, 0.0f );
+			}
+
+			if ( g_->keypad1.isPressed( PAD_INPUT_7 ) ) leftAvert = true;
+			if ( g_->keypad1.isPressed( PAD_INPUT_8 ) ) rightAvert = true;
+		}
+		
+		// プレイヤ
+		{
+			// 向き
+			{
+				Vector3f diff;
+				
+				diff = target_.pos - player_.pos;
+				
+				if ( diff.getLength2() > FLT_EPSILON ){
+					player_.rot.x = ( float )( atan2( ( float )-diff.y, ( float )diff.z ) );
+					player_.rot.y = ( float )( atan2( ( float )diff.z, ( float )-diff.x ) - F_PI * 0.5f );
+					
+					if ( !( leftAvert || rightAvert ) ){
+						player_.rot.z = -player_.rot.y;
+					}
+				}else{
+					player_.rot.x = 0.0f;
+					player_.rot.y = 0.0f;
+					player_.rot.z = 0.0f;
+				}
+			}
 			
-			diff = target_.pos - player_.pos;
+			// 移動速度
+			{
+				MATRIX my = MGetRotY( player_.rot.y );
+				MATRIX mx = MGetRotX( player_.rot.x );
+				Vector3f v = VTransform( Vector3f( 0.0f, 0.0f, 30.0f ), mx );
+				v = VTransform( v, my );
+				
+				player_.mv.x = v.x;
+				player_.mv.y = v.y;
+				player_.mv.z = 0.0f;
+			}
 			
-			player_.mv.set( 0.0f, 0.0f, 0.0f );
-			player_.rot.x = ( float )( atan2( ( float )-diff.y, ( float )diff.z ) );
-			player_.rot.y = ( float )( atan2( ( float )diff.z, ( float )-diff.x ) - F_PI * 0.5f );
-			player_.rot.z = -player_.rot.y;
+			// 向き
+			if ( leftAvert || rightAvert ){
+				if ( leftAvert ){
+					player_.rot.z = player_.rot.z * 0.4f + F_PI / 2.0f * 0.6f;
+				}
+				else if ( rightAvert ){
+					player_.rot.z = player_.rot.z * 0.4f + ( -F_PI / 2.0f * 0.6f );
+				}
+				player_.rot.y *= 2.0f; // 演出としてより傾ける
+				player_.mv.x *= 2.0f;
+			}
+
+			if ( player_.rot.y < -F_PI / 2.0f ) player_.rot.y = -F_PI / 2.0f;
+			if ( player_.rot.y > F_PI / 2.0f ) player_.rot.y = F_PI / 2.0f;
 		}
 	}
 	
-	// カメラ設定
-	camera_.target = player_.pos;
-	camera_.pos = camera_.target + Vector3f( 0.0f, 1.0f, -1500.0f );
+	// 位置更新
+	{
+		// プレイヤ
+		{
+			player_.pos += player_.mv;
+
+			// 位置制限
+			if ( player_.pos.x < -1000.0f ) player_.pos.x = -1000.0f;
+			if ( player_.pos.x > 1000.0f ) player_.pos.x = 1000.0f;
+			if ( player_.pos.y < 0.0f ) player_.pos.y = 0.0f;
+			if ( player_.pos.y > 350.0f ) player_.pos.y = 350.0f;
+		}
+		
+		// ターゲット
+		{
+			if ( holdJoypad ){
+				// ジョイパッド操作中
+				target_.pos += target_.mv;
+			}else{
+				// ジョイパッド非操作中
+				
+				// 位置を戻す
+				target_.pos.x = player_.pos.x * 0.1f + target_.pos.x * 0.9f;
+				target_.pos.y = player_.pos.y * 0.1f + target_.pos.y * 0.9f;
+			}
+			
+			target_.pos.z = player_.pos.z + 1000.0f;
+			
+			// 位置制限
+			if ( target_.pos.x < -1000.0f ) target_.pos.x = -1000.0f;
+			if ( target_.pos.x > 1000.0f ) target_.pos.x = 1000.0f;
+			if ( target_.pos.y < -500.0f ) target_.pos.y = -500.0f;
+			if ( target_.pos.y > 1000.0f ) target_.pos.y = 1000.0f;
+		}
+	}
+	
+	// カメラ位置更新
+	{
+		camera_.target.set( 0.0f, 0.0f, player_.pos.z );
+		camera_.pos = camera_.target + Vector3f( 0.0f, 0.0f, -1500.0f );
+	}
 }
 
 /**
@@ -494,6 +566,26 @@ void PlayerControllScene::onDraw(){
 		MV1DrawModel( targetModelId_ );
 		
 		MV1SetWriteZBuffer( targetModelId_, TRUE ); // Z バッファ更新する(元に戻す)
+	}
+	
+	// HUD
+	{
+		char msg[ 256 ] = { 0 };
+		
+		//sprintf( msg, "cnt = %d", cnt_ );
+		//DrawString( 0, 0, msg, GetColor( 255, 255, 255 ) ) ;
+		
+		sprintf( msg, "pos(%3.3f, %3.3f, %3.3f)", player_.pos.x, player_.pos.y, player_.pos.z );
+		DrawString( 0, 30, msg, GetColor( 255, 255, 255 ) ) ;
+		
+		sprintf( msg, "rot(%3.3f, %3.3f, %3.3f)", player_.rot.x, player_.rot.y, player_.rot.z );
+		DrawString( 0, 60, msg, GetColor( 255, 255, 255 ) ) ;
+		
+		//sprintf( msg, "relative(%3.3f, %3.3f, %3.3f)", relative.x, relative.y, relative.z );
+		//DrawString( 0, 60, msg, GetColor( 255, 255, 255 ) ) ;
+		//
+		//sprintf( msg, "target(%3.3f, %3.3f, %3.3f)", target.pos.x, target.pos.y, target.pos.z );
+		//DrawString( 0, 90, msg, GetColor( 255, 255, 255 ) ) ;
 	}
 	
 	ScreenFlip(); // 描画完了
