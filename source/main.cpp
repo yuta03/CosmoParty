@@ -158,6 +158,8 @@ class Keypad{
 	int pressSt_; /** 押されているキー */
 	int pushSt_; /** 押されたキー */
 	int releaseSt_; /** 離されたキー */
+	float stickX_; /** スティック x 成分 */
+	float stickY_; /** スティック y 成分 */
 	
 public:
 	Keypad();
@@ -174,13 +176,17 @@ public:
 	bool isPressed( int keyCode ) const;
 	bool isPushed( int keyCode ) const;
 	bool isReleased( int keyCode ) const;
+	
+	float getStickX() const;
+	float getStickY() const;
 };
 
 /**
  * キーパッド生成
  */
 Keypad::Keypad():
-pressSt_( 0 ), pushSt_( 0 ), releaseSt_( 0 ){
+pressSt_( 0 ), pushSt_( 0 ), releaseSt_( 0 ),
+stickX_( 0.0f ), stickY_( 0.0f ){
 }
 /**
  * キーパッド破棄
@@ -192,10 +198,18 @@ Keypad::~Keypad(){
  * キーパッド状態更新
  */
 Keypad& Keypad::update(){
+	// キーパッド
 	int prev = pressSt_;
 	pressSt_ = GetJoypadInputState( DX_INPUT_KEY_PAD1 );
 	releaseSt_ = prev & ( pressSt_ ^ prev );
 	pushSt_  = pressSt_ & ( pressSt_ ^ prev );
+	
+	// スティック
+	int joypadX = 0;
+	int joypadY = 0;
+	GetJoypadAnalogInput( &joypadX, &joypadY, DX_INPUT_PAD1 );
+	stickX_ = ( float )joypadX / 1000.0f;
+	stickY_ = ( float )joypadY / 1000.0f;
 	
 	return *this;
 }
@@ -217,6 +231,18 @@ bool Keypad::isPushed( int keyCode ) const{
  */
 bool Keypad::isReleased( int keyCode ) const{
 	return ( releaseSt_ & keyCode ) != 0;
+}
+/**
+ * スティック x 成分取得
+ */
+float Keypad::getStickX() const{
+	return stickX_;
+}
+/**
+ * スティック y 成分取得
+ */
+float Keypad::getStickY() const{
+	return stickY_;
 }
 
 //-------------------- シーン --------------------
@@ -347,6 +373,182 @@ struct Target{
 	Vector3f mv; /** 移送速度 */
 };
 
+
+/**
+ * プレイヤーの制御に必要な情報
+ */
+struct PlayerUnit{
+	Keypad& keypad; /** キーパッド */
+	Player& player; /** プレイヤ */
+	Target& target; /** ターゲット */
+	Camera& camera; /** カメラ */
+	
+	PlayerUnit( Keypad& k, Player& p, Target& t, Camera& c ):
+	keypad( k ), player( p ), target( t ), camera( c ){}
+};
+
+/**
+ * プレイヤーコントローラ
+ */
+class PlayerController{
+public:
+	PlayerController( PlayerUnit& unit );
+	~PlayerController();
+
+public:
+	void controll();
+	void update();
+	
+private:
+	PlayerUnit& unit_;
+	bool holdJoypad_;
+};
+
+/**
+ * 生成
+ */
+PlayerController::PlayerController( PlayerUnit& unit ):
+unit_( unit ){
+}
+/**
+ * 破棄
+ */
+PlayerController::~PlayerController(){
+}
+/**
+ * 操作
+ */
+void PlayerController::controll(){
+	bool leftAvert = false;
+	bool rightAvert = false;
+	float stickX = 0.0f;
+	float stickY = 0.0f;
+	
+	// ジョイパッド状態取得
+	holdJoypad_ = false;
+	stickX = unit_.keypad.getStickX();
+	stickY = unit_.keypad.getStickY();
+	if ( !( fabs( stickX ) < FLT_EPSILON && fabs( stickY ) < FLT_EPSILON ) ){
+		holdJoypad_ = true;
+	}
+	
+	// 操作・速度更新
+	{
+		// ターゲット操作
+		{
+			if ( holdJoypad_ ){
+				// ジョイパッド操作中
+				unit_.target.mv.x = stickX * 100.0f;
+				unit_.target.mv.y = -stickY * 100.0f;
+			}else{
+				// ジョイパッド非操作中
+				unit_.target.mv.set( 0.0f, 0.0f, 0.0f );
+			}
+
+			if ( unit_.keypad.isPressed( PAD_INPUT_7 ) ) leftAvert = true;
+			if ( unit_.keypad.isPressed( PAD_INPUT_8 ) ) rightAvert = true;
+		}
+		
+		// プレイヤ
+		{
+			// 向き
+			{
+				Vector3f diff;
+				
+				diff = unit_.target.pos - unit_.player.pos;
+				
+				if ( diff.getLength2() > FLT_EPSILON ){
+					unit_.player.rot.x = ( float )( atan2( ( float )-diff.y, ( float )diff.z ) );
+					unit_.player.rot.y = ( float )( atan2( ( float )diff.z, ( float )-diff.x ) - F_PI * 0.5f );
+					
+					if ( !( leftAvert || rightAvert ) ){
+						unit_.player.rot.z = -unit_.player.rot.y;
+					}
+				}else{
+					unit_.player.rot.x = 0.0f;
+					unit_.player.rot.y = 0.0f;
+					unit_.player.rot.z = 0.0f;
+				}
+			}
+			
+			// 移動速度
+			{
+				MATRIX my = MGetRotY( unit_.player.rot.y );
+				MATRIX mx = MGetRotX( unit_.player.rot.x );
+				Vector3f v = VTransform( Vector3f( 0.0f, 0.0f, 30.0f ), mx );
+				v = VTransform( v, my );
+				
+				unit_.player.mv.x = v.x;
+				unit_.player.mv.y = v.y;
+				unit_.player.mv.z = 0.0f;
+			}
+			
+			// 向き
+			if ( leftAvert || rightAvert ){
+				if ( leftAvert ){
+					unit_.player.rot.z = unit_.player.rot.z * 0.4f + F_PI / 2.0f * 0.6f;
+				}
+				else if ( rightAvert ){
+					unit_.player.rot.z = unit_.player.rot.z * 0.4f + ( -F_PI / 2.0f * 0.6f );
+				}
+				unit_.player.rot.y *= 2.0f; // 演出としてより傾ける
+				unit_.player.mv.x *= 2.0f;
+			}
+			
+			if ( unit_.player.rot.y < -F_PI / 2.0f ) unit_.player.rot.y = -F_PI / 2.0f;
+			if ( unit_.player.rot.y > F_PI / 2.0f ) unit_.player.rot.y = F_PI / 2.0f;
+		}
+	}
+}
+/**
+ * 更新
+ */
+void PlayerController::update(){
+	// 位置更新
+	{
+		// プレイヤ
+		{
+			unit_.player.pos += unit_.player.mv;
+
+			// 位置制限
+			if ( unit_.player.pos.x < -750.0f ) unit_.player.pos.x = -750.0f;
+			if ( unit_.player.pos.x > 750.0f ) unit_.player.pos.x = 750.0f;
+			if ( unit_.player.pos.y < 0.0f ) unit_.player.pos.y = 0.0f;
+			if ( unit_.player.pos.y > 350.0f ) unit_.player.pos.y = 350.0f;
+		}
+		
+		// ターゲット
+		{
+			if ( holdJoypad_ ){
+				// ジョイパッド操作中
+				unit_.target.pos += unit_.target.mv;
+			}else{
+				// ジョイパッド非操作中
+				
+				// 位置を戻す
+				unit_.target.pos.x = unit_.player.pos.x * 0.1f + unit_.target.pos.x * 0.9f;
+				unit_.target.pos.y = unit_.player.pos.y * 0.1f + unit_.target.pos.y * 0.9f;
+			}
+			
+			unit_.target.pos.z = unit_.player.pos.z + 1000.0f;
+			
+			// 位置制限
+			if ( unit_.target.pos.x < -750.0f ) unit_.target.pos.x = -750.0f;
+			if ( unit_.target.pos.x > 750.0f ) unit_.target.pos.x = 750.0f;
+			if ( unit_.target.pos.y < -500.0f ) unit_.target.pos.y = -500.0f;
+			if ( unit_.target.pos.y > 1000.0f ) unit_.target.pos.y = 1000.0f;
+		}
+	}
+	
+	// カメラ位置更新
+	{
+		unit_.camera.target.set( 0.0f, 0.0f, unit_.player.pos.z );
+		unit_.camera.pos = unit_.camera.target + Vector3f( 0.0f, 0.0f, -1500.0f );
+	}
+}
+
+
+
 /**
  * プレイヤー操作シーン</BR>
  * 1.0f = 1cm とする。
@@ -394,129 +596,11 @@ PlayerControllScene::~PlayerControllScene(){
  * 更新
  */
 void PlayerControllScene::onUpdate(){
-	bool holdJoypad = false;
-	bool leftAvert = false;
-	bool rightAvert = false;
-	int joypadX = 0;
-	int joypadY = 0;
-
-	// ジョイパッド状態取得
-	GetJoypadAnalogInput( &joypadX, &joypadY, DX_INPUT_PAD1 );
-	if ( !( joypadX == 0 && joypadY == 0 ) ){
-		holdJoypad = true;
-	}
+	PlayerUnit unit( g_->keypad1, player_, target_, camera_ );
+	PlayerController ctrler( unit );
 	
-	// 操作・速度更新
-	{
-		// ターゲット操作
-		{
-			if ( holdJoypad ){
-				// ジョイパッド操作中
-				holdJoypad = true;
-				
-				target_.mv.x = ( float )joypadX / 10.0f;
-				target_.mv.y = ( float )-joypadY / 10.0f;
-			}else{
-				// ジョイパッド非操作中
-				target_.mv.set( 0.0f, 0.0f, 0.0f );
-			}
-
-			if ( g_->keypad1.isPressed( PAD_INPUT_7 ) ) leftAvert = true;
-			if ( g_->keypad1.isPressed( PAD_INPUT_8 ) ) rightAvert = true;
-		}
-		
-		// プレイヤ
-		{
-			// 向き
-			{
-				Vector3f diff;
-				
-				diff = target_.pos - player_.pos;
-				
-				if ( diff.getLength2() > FLT_EPSILON ){
-					player_.rot.x = ( float )( atan2( ( float )-diff.y, ( float )diff.z ) );
-					player_.rot.y = ( float )( atan2( ( float )diff.z, ( float )-diff.x ) - F_PI * 0.5f );
-					
-					if ( !( leftAvert || rightAvert ) ){
-						player_.rot.z = -player_.rot.y;
-					}
-				}else{
-					player_.rot.x = 0.0f;
-					player_.rot.y = 0.0f;
-					player_.rot.z = 0.0f;
-				}
-			}
-			
-			// 移動速度
-			{
-				MATRIX my = MGetRotY( player_.rot.y );
-				MATRIX mx = MGetRotX( player_.rot.x );
-				Vector3f v = VTransform( Vector3f( 0.0f, 0.0f, 30.0f ), mx );
-				v = VTransform( v, my );
-				
-				player_.mv.x = v.x;
-				player_.mv.y = v.y;
-				player_.mv.z = 0.0f;
-			}
-			
-			// 向き
-			if ( leftAvert || rightAvert ){
-				if ( leftAvert ){
-					player_.rot.z = player_.rot.z * 0.4f + F_PI / 2.0f * 0.6f;
-				}
-				else if ( rightAvert ){
-					player_.rot.z = player_.rot.z * 0.4f + ( -F_PI / 2.0f * 0.6f );
-				}
-				player_.rot.y *= 2.0f; // 演出としてより傾ける
-				player_.mv.x *= 2.0f;
-			}
-
-			if ( player_.rot.y < -F_PI / 2.0f ) player_.rot.y = -F_PI / 2.0f;
-			if ( player_.rot.y > F_PI / 2.0f ) player_.rot.y = F_PI / 2.0f;
-		}
-	}
-	
-	// 位置更新
-	{
-		// プレイヤ
-		{
-			player_.pos += player_.mv;
-
-			// 位置制限
-			if ( player_.pos.x < -1000.0f ) player_.pos.x = -1000.0f;
-			if ( player_.pos.x > 1000.0f ) player_.pos.x = 1000.0f;
-			if ( player_.pos.y < 0.0f ) player_.pos.y = 0.0f;
-			if ( player_.pos.y > 350.0f ) player_.pos.y = 350.0f;
-		}
-		
-		// ターゲット
-		{
-			if ( holdJoypad ){
-				// ジョイパッド操作中
-				target_.pos += target_.mv;
-			}else{
-				// ジョイパッド非操作中
-				
-				// 位置を戻す
-				target_.pos.x = player_.pos.x * 0.1f + target_.pos.x * 0.9f;
-				target_.pos.y = player_.pos.y * 0.1f + target_.pos.y * 0.9f;
-			}
-			
-			target_.pos.z = player_.pos.z + 1000.0f;
-			
-			// 位置制限
-			if ( target_.pos.x < -1000.0f ) target_.pos.x = -1000.0f;
-			if ( target_.pos.x > 1000.0f ) target_.pos.x = 1000.0f;
-			if ( target_.pos.y < -500.0f ) target_.pos.y = -500.0f;
-			if ( target_.pos.y > 1000.0f ) target_.pos.y = 1000.0f;
-		}
-	}
-	
-	// カメラ位置更新
-	{
-		camera_.target.set( 0.0f, 0.0f, player_.pos.z );
-		camera_.pos = camera_.target + Vector3f( 0.0f, 0.0f, -1500.0f );
-	}
+	ctrler.controll();
+	ctrler.update();
 }
 
 /**
