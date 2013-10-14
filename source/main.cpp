@@ -270,6 +270,7 @@ public:
 enum SceneCode{
 	SceneCodeEmpty4Develop = 0, /** 【開発用】空シーン */
 	SceneCodePlayerControll4Develop, /** 【開発用】プレイヤー操作シーン */
+	SceneCodeWeapon4Develop, /** 【開発用】武器シーン */
 };
 
 /**
@@ -289,7 +290,7 @@ struct Global{
  */
 Global::Global():
 keypad1(),
-scene( NULL ), sceneCode( SceneCodePlayerControll4Develop ){
+scene( NULL ), sceneCode( SceneCodeWeapon4Develop ){
 }
 
 /**
@@ -345,8 +346,9 @@ void EmptyScene::onDraw(){
 
 
 
-//================================================== 【開発用】プレイヤー操作シーン ==================================================
 
+//================================================== ゲーム情報 ==================================================
+// 1.0f = 1cm とする。
 
 /**
  * カメラ情報
@@ -547,11 +549,11 @@ void PlayerController::update(){
 	}
 }
 
+//================================================== 【開発用】プレイヤー操作シーン ==================================================
 
 
 /**
- * プレイヤー操作シーン</BR>
- * 1.0f = 1cm とする。
+ * プレイヤー操作シーン
  */
 class PlayerControllScene : public virtual Scene{
 public:
@@ -656,29 +658,259 @@ void PlayerControllScene::onDraw(){
 	{
 		char msg[ 256 ] = { 0 };
 		
-		//sprintf( msg, "cnt = %d", cnt_ );
-		//DrawString( 0, 0, msg, GetColor( 255, 255, 255 ) ) ;
-		
 		sprintf( msg, "pos(%3.3f, %3.3f, %3.3f)", player_.pos.x, player_.pos.y, player_.pos.z );
-		DrawString( 0, 30, msg, GetColor( 255, 255, 255 ) ) ;
+		DrawString( 0, 0, msg, GetColor( 255, 255, 255 ) ) ;
 		
 		sprintf( msg, "rot(%3.3f, %3.3f, %3.3f)", player_.rot.x, player_.rot.y, player_.rot.z );
-		DrawString( 0, 60, msg, GetColor( 255, 255, 255 ) ) ;
-		
-		//sprintf( msg, "relative(%3.3f, %3.3f, %3.3f)", relative.x, relative.y, relative.z );
-		//DrawString( 0, 60, msg, GetColor( 255, 255, 255 ) ) ;
-		//
-		//sprintf( msg, "target(%3.3f, %3.3f, %3.3f)", target.pos.x, target.pos.y, target.pos.z );
-		//DrawString( 0, 90, msg, GetColor( 255, 255, 255 ) ) ;
+		DrawString( 0, 20, msg, GetColor( 255, 255, 255 ) ) ;
 	}
 	
 	ScreenFlip(); // 描画完了
 }
 
+//================================================== 【開発用】武器シーン ==================================================
+
+/**
+ * ショット情報
+ */
+struct Shot{
+	Vector3f pos; /** 位置 */
+	Vector3f rot; /** 回転 */
+	Vector3f mv; /** 移動 */
+	bool isAlive; /** 生きているか否か */
+	
+	Shot():
+	pos(), rot(), mv(),
+	isAlive( false ){}
+};
+
+/**
+ * マズル情報
+ */
+struct Muzzle{
+	Vector3f pos; /** 位置 */
+	Vector3f rot; /** 回転 */
+	bool isAlive; /** 生きているか否か */
+	int cnt; /** カウンタ */
+	
+	Muzzle():
+	pos(), rot(),
+	isAlive( false ), cnt( 0 ){}
+};
 
 
+/**
+ * 武器シーン
+ */
+class WeaponScene : public virtual Scene{
+public:
+	WeaponScene( Global* g );
+	~WeaponScene();
+	
+	void onUpdate();
+	void onDraw();
 
+private:
+	Global* g_; /** グローバルオブジェクト */
+	int targetModelId_; /** ターゲットモデル ID */
+	int shortModelId_; /** ショットモデル ID */
+	int muzzleModelId_; /** マズルモデル ID */
+	
+	Vector3f target_; /** ターゲット */
+	Camera camera_; /** カメラ */
+	Shot shot_; /** ショット */
+	Muzzle muzzle_; /** マズル */
+};
 
+/**
+ * 生成
+ */
+WeaponScene::WeaponScene( Global* g ):
+Scene(),
+g_( g ),
+targetModelId_( -1 ),
+target_(), camera_(){
+	// モデル読み込み
+	targetModelId_ = MV1LoadModel( "resource/target.x" );
+	shortModelId_ = MV1LoadModel( "resource/beam000.x" );
+	muzzleModelId_ = MV1LoadModel( "resource/beam000_muzzle.x" );
+}
+/**
+ * 破棄
+ */
+WeaponScene::~WeaponScene(){
+	// モデル破棄
+	MV1DeleteModel( targetModelId_ ); targetModelId_ = -1;
+	MV1DeleteModel( shortModelId_ ); shortModelId_ = -1;
+	MV1DeleteModel( muzzleModelId_ ); muzzleModelId_ = -1;
+}
+
+/**
+ * 更新
+ */
+void WeaponScene::onUpdate(){
+	++muzzle_.cnt; // 
+	
+	// 更新
+	{
+		// ショット
+		if ( g_->keypad1.isPushed( PAD_INPUT_1 ) ){
+			Vector3f diff = target_ - Vector3f( 0.0f, 0.0f, 0.0f );
+			
+			Vector3f speed;
+			MATRIX matrix;
+			
+			// ショット
+			float rotY = ( float )( atan2( ( float )shot_.mv.z, ( float )-shot_.mv.x ) - F_PI * 0.5f );
+			
+			matrix = MGetRotY( rotY );
+			
+			shot_.pos = Vector3f(); // 位置
+			shot_.mv = target_ - Vector3f();
+			
+			float rate = 100.0f / shot_.mv.getLength();
+			shot_.mv.x *= rate;
+			shot_.mv.y *= rate;
+			shot_.mv.z *= rate;
+			
+			shot_.rot.x = ( float )( atan2( ( float )-shot_.mv.y, ( float )shot_.mv.z ) );
+			shot_.rot.y = ( float )( atan2( ( float )shot_.mv.z, ( float )-shot_.mv.x ) - F_PI * 0.5f );
+			shot_.rot.z = 0.0f;
+			
+			shot_.isAlive = true;
+			
+			// マズル
+			muzzle_.pos = shot_.pos;
+			muzzle_.rot = shot_.rot;
+			
+			muzzle_.cnt = 0;
+		}
+	}
+	
+	{
+		// 位置更新
+		if ( g_->keypad1.isPressed( PAD_INPUT_LEFT ) ) target_.x -= 100.0f;
+		if ( g_->keypad1.isPressed( PAD_INPUT_RIGHT ) ) target_.x += 100.0f;
+		if ( g_->keypad1.isPressed( PAD_INPUT_UP ) ) target_.y += 100.0f;
+		if ( g_->keypad1.isPressed( PAD_INPUT_DOWN ) ) target_.y -= 100.0f;
+		target_.z = 1000.0f;
+		
+		// 位置制限
+		if ( target_.x < -750.0f ) target_.x = -750.0f;
+		if ( target_.x > 750.0f ) target_.x = 750.0f;
+		if ( target_.y < -500.0f ) target_.y = -500.0f;
+		if ( target_.y > 1000.0f ) target_.y = 1000.0f;
+		
+		// ショット位置更新
+		shot_.pos += shot_.mv;
+	}
+	
+	// カメラ位置更新
+	{
+		camera_.target.set( 0.0f, 0.0f, 0.0f );
+		camera_.pos = camera_.target + Vector3f( 0.0f, 0.0f, -1500.0f );
+	}
+}
+
+/**
+ * 描画
+ */
+void WeaponScene::onDraw(){
+	ClearDrawScreen(); // クリア
+	
+	// カメラ
+	{
+		SetupCamera_Perspective( F_PI * 30.f / 180.f ); // 画角
+		SetCameraNearFar( 1.0f, 3000.0f ); // 前面・背面の距離
+		
+		SetCameraPositionAndTarget_UpVecY( camera_.pos, camera_.target ); // カメラ姿勢
+	}
+	
+	// ターゲット描画
+	{
+		MV1SetWriteZBuffer( targetModelId_, FALSE ); // Z バッファ更新しない
+		
+		// 1 つ目
+		MV1SetPosition( targetModelId_, target_ );
+		
+		MV1DrawModel( targetModelId_ );
+		
+		// 2 つ目
+		Vector3f point = Vector3f( 0.0f, 0.0f, 0.0f ) + target_;
+		point.x *= 0.5f;
+		point.y *= 0.5f;
+		point.z *= 0.5f;
+		MV1SetPosition( targetModelId_, point );
+		
+		MV1DrawModel( targetModelId_ );
+		
+		MV1SetWriteZBuffer( targetModelId_, TRUE ); // Z バッファ更新する(元に戻す)
+	}
+	
+	// ショット
+	{
+		// ショット
+		{
+			MV1SetWriteZBuffer( shortModelId_, FALSE ); // Z バッファ更新しない
+			
+			MV1SetPosition( shortModelId_, shot_.pos );
+			MV1SetRotationXYZ( shortModelId_, shot_.rot );
+			
+			MV1SetMaterialDrawBlendMode( shortModelId_, 0, DX_BLENDMODE_ALPHA );
+			MV1SetMaterialDrawBlendParam( shortModelId_, 0, 224 );
+			
+			MV1DrawModel( shortModelId_ );
+			
+			MV1SetMaterialDrawBlendMode( shortModelId_, 0, DX_BLENDMODE_NOBLEND );
+			MV1SetMaterialDrawBlendParam( shortModelId_, 0, 255 );
+			
+			MV1SetWriteZBuffer( shortModelId_, TRUE ); // Z バッファ更新する(元に戻す)
+		}
+		// マズル
+		{
+			float scale = 0.0f;
+			
+			if ( muzzle_.cnt < 10 ) scale = 1.0f - ( float )muzzle_.cnt / 10.0f;
+			else scale = 0.0f;
+
+			MV1SetWriteZBuffer( muzzleModelId_, FALSE ); // Z バッファ更新しない
+			
+			MV1SetPosition( muzzleModelId_, muzzle_.pos );
+			
+			MV1SetRotationXYZ( muzzleModelId_, muzzle_.rot );
+			MV1SetScale( muzzleModelId_, Vector3f( scale, scale, scale ) );
+			
+			MV1SetMaterialDrawBlendMode( muzzleModelId_, 0, DX_BLENDMODE_ADD );
+			MV1SetMaterialDrawBlendParam( muzzleModelId_, 0, 255 );
+			
+			MV1DrawModel( muzzleModelId_ );
+			
+			MV1SetMaterialDrawBlendMode( muzzleModelId_, 0, DX_BLENDMODE_NOBLEND );
+			MV1SetMaterialDrawBlendParam( muzzleModelId_, 0, 255 );
+			
+			MV1SetWriteZBuffer( muzzleModelId_, TRUE ); // Z バッファ更新する(元に戻す)
+		}
+	}
+	
+	// HUD
+	{
+		char msg[ 256 ] = { 0 };
+		
+		//sprintf( msg, "pos(%3.3f, %3.3f, %3.3f)", shot_.pos.x, shot_.pos.y, shot_.pos.z );
+		//DrawString( 0, 20*0, msg, GetColor( 255, 255, 255 ) ) ;
+		//
+		//sprintf( msg, "mv(%3.3f, %3.3f, %3.3f)", shot_.mv.x, shot_.mv.y, shot_.mv.z );
+		//DrawString( 0, 20*1, msg, GetColor( 255, 255, 255 ) ) ;
+		//
+		//sprintf( msg, "rot(%3.3f, %3.3f, %3.3f)", shot_.rot.x, shot_.rot.y, shot_.rot.z );
+		//DrawString( 0, 20*2, msg, GetColor( 255, 255, 255 ) ) ;
+		
+		sprintf( msg, "muzzle_.cnt(%d)", muzzle_.cnt );
+		DrawString( 0, 20*3, msg, GetColor( 255, 255, 255 ) ) ;
+	}
+	
+	ScreenFlip(); // 描画完了
+}
 
 
 //================================================== シーンファクトリ ==================================================
@@ -689,6 +921,7 @@ void PlayerControllScene::onDraw(){
 static Scene* createScene( SceneCode code, Global* g ){
 	if ( code == SceneCodeEmpty4Develop ) return new EmptyScene( g );
 	if ( code == SceneCodePlayerControll4Develop ) return new PlayerControllScene( g );
+	if ( code == SceneCodeWeapon4Develop ) return new WeaponScene( g );
 	
 	return NULL;
 }
