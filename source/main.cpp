@@ -335,6 +335,8 @@ struct Camera{
  */
 struct Player{
 	Vector3f pos; /** 位置 */
+	Vector3f mv; /** 移動速度 */
+	Vector3f rot; /** 回転 */
 };
 
 /**
@@ -424,9 +426,21 @@ void PlayerControllScene::onUpdate(){
 		target_.pos.z = player_.pos.z + 1000.0f;
 	}
 	
-	
 	// プレイヤ
-	player_.pos.set( 0.0f, 0.0f, 0.0f );
+	{
+		player_.pos.set( 0.0f, 0.0f, 0.0f );
+		
+		{
+			Vector3f diff;
+			
+			diff = target_.pos - player_.pos;
+			
+			player_.mv.set( 0.0f, 0.0f, 0.0f );
+			player_.rot.x = ( float )( atan2( ( float )-diff.y, ( float )diff.z ) );
+			player_.rot.y = ( float )( atan2( ( float )diff.z, ( float )-diff.x ) - F_PI * 0.5f );
+			player_.rot.z = -player_.rot.y;
+		}
+	}
 	
 	// カメラ設定
 	camera_.target = player_.pos;
@@ -449,7 +463,14 @@ void PlayerControllScene::onDraw(){
 	
 	// プレイヤー描画
 	{
+		MATRIX matrix;
+		
 		MV1SetPosition( playerModelId_, player_.pos );
+		
+		matrix = MMult( MGetRotX( player_.rot.x ), MGetRotY( player_.rot.y ) );
+		matrix = MMult( MGetRotZ( player_.rot.z ), matrix );
+		
+		MV1SetRotationMatrix( playerModelId_, matrix );
 		
 		MV1DrawModel( playerModelId_ );
 	}
