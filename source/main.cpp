@@ -326,7 +326,7 @@ void EmptyScene::onDraw(){
  * カメラ情報
  */
 struct Camera{
-	Vector3f position; /** 位置 */
+	Vector3f pos; /** 位置 */
 	Vector3f target; /** 対象 */
 };
 
@@ -334,11 +334,20 @@ struct Camera{
  * プレイヤー情報
  */
 struct Player{
-	Vector3f position; /** 位置 */
+	Vector3f pos; /** 位置 */
 };
 
 /**
- * プレイヤー操作シーン
+ * ターゲット情報
+ */
+struct Target{
+	Vector3f pos; /** 位置 */
+	Vector3f mv; /** 移送速度 */
+};
+
+/**
+ * プレイヤー操作シーン</BR>
+ * 1.0f = 1cm とする。
  */
 class PlayerControllScene : public virtual Scene{
 public:
@@ -350,9 +359,11 @@ public:
 
 private:
 	Global* g_; /** グローバルオブジェクト */
-	int modelId_; /** モデル ID */
+	int playerModelId_; /** プレイヤーモデル ID */
+	int targetModelId_; /** ターゲットモデル ID */
 	
 	Player player_; /** プレイヤー */
+	Target target_; /** ターゲット */
 	Camera camera_; /** カメラ */
 };
 
@@ -362,29 +373,64 @@ private:
 PlayerControllScene::PlayerControllScene( Global* g ):
 Scene(),
 g_( g ),
-modelId_( -1 ),
-player_(), camera_(){
+playerModelId_( -1 ), targetModelId_( -1 ),
+player_(), target_(), camera_(){
 	// モデル読み込み
-	modelId_ = MV1LoadModel( "resource/airplane_player.x" );
+	playerModelId_ = MV1LoadModel( "resource/airplane_player.x" );
+	targetModelId_ = MV1LoadModel( "resource/target.x" );
 }
 /**
  * 破棄
  */
 PlayerControllScene::~PlayerControllScene(){
 	// モデル破棄
-	MV1DeleteModel( modelId_ ); modelId_ = -1;
+	MV1DeleteModel( playerModelId_ ); playerModelId_ = -1;
+	MV1DeleteModel( targetModelId_ ); targetModelId_ = -1;
 }
 
 /**
  * 更新
  */
 void PlayerControllScene::onUpdate(){
+	// ターゲット操作
+	{
+		int dirX = 0;
+		int dirY = 0;
+		
+		GetJoypadAnalogInput( &dirX, &dirY, DX_INPUT_PAD1 ); // ジョイパッド状態取得
+		
+		if ( !( dirX == 0 && dirY == 0 ) ){
+			// ジョイパッド操作中
+			target_.mv.x = ( float )dirX / 10.0f;
+			target_.mv.y = ( float )-dirY / 10.0f;
+		}else{
+			// ジョイパッド未操作
+			target_.mv.set( 0.0f, 0.0f, 0.0f );
+			
+			// 位置を戻す
+			target_.pos.x = player_.pos.x * 0.1f + target_.pos.x * 0.9f;
+			target_.pos.y = player_.pos.y * 0.1f + target_.pos.y * 0.9f;
+		}
+
+		// ターゲット位置更新
+		target_.pos += target_.mv;
+		
+		// ターゲット移動制限
+		if ( target_.pos.x < -1000.0f ) target_.pos.x = -1000.0f;
+		if ( target_.pos.x > 1000.0f ) target_.pos.x = 1000.0f;
+		if ( target_.pos.y < -500.0f ) target_.pos.y = -500.0f;
+		if ( target_.pos.y > 1000.0f ) target_.pos.y = 1000.0f;
+		
+		target_.pos.z = player_.pos.z + 1000.0f;
+	}
+	
+	
 	// プレイヤ
-	player_.position.set( 0.0f, 0.0f, 0.0f );
+	player_.pos.set( 0.0f, 0.0f, 0.0f );
 	
 	// カメラ設定
-	camera_.target = player_.position;
-	camera_.position = camera_.target + Vector3f( 0.0f, 1.0f, -6.0f );
+	camera_.target = player_.pos;
+	camera_.pos = camera_.target + Vector3f( 0.0f, 1.0f, -1500.0f );
 }
 
 /**
@@ -396,17 +442,37 @@ void PlayerControllScene::onDraw(){
 	// カメラ
 	{
 		SetupCamera_Perspective( F_PI * 30.f / 180.f ); // 画角
-		SetCameraNearFar( 1.0f, 1000.0f ); // 前面・背面の距離
+		SetCameraNearFar( 1.0f, 3000.0f ); // 前面・背面の距離
 		
-		SetCameraPositionAndTarget_UpVecY( camera_.position, camera_.target ); // カメラ姿勢
+		SetCameraPositionAndTarget_UpVecY( camera_.pos, camera_.target ); // カメラ姿勢
 	}
 	
 	// プレイヤー描画
 	{
-		MV1SetPosition( modelId_, player_.position );
-		MV1SetScale( modelId_, Vector3f( 0.0075f, 0.0075f, 0.0075f ) );
+		MV1SetPosition( playerModelId_, player_.pos );
 		
-		MV1DrawModel( modelId_ ); // 描画
+		MV1DrawModel( playerModelId_ );
+	}
+
+	// ターゲット描画
+	{
+		MV1SetWriteZBuffer( targetModelId_, FALSE ); // Z バッファ更新しない
+		
+		// 1 つ目
+		MV1SetPosition( targetModelId_, target_.pos );
+		
+		MV1DrawModel( targetModelId_ );
+		
+		// 2 つ目
+		Vector3f point = player_.pos + target_.pos;
+		point.x *= 0.5f;
+		point.y *= 0.5f;
+		point.z *= 0.5f;
+		MV1SetPosition( targetModelId_, point );
+		
+		MV1DrawModel( targetModelId_ );
+		
+		MV1SetWriteZBuffer( targetModelId_, TRUE ); // Z バッファ更新する(元に戻す)
 	}
 	
 	ScreenFlip(); // 描画完了
